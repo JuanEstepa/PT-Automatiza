@@ -19,6 +19,23 @@ export default function Reportes() {
   const [filas, setFilas] = useState<AuditRow[] | null>(null);
   const [cargando, setCargando] = useState(false);
   const [exportando, setExportando] = useState<'xlsx' | 'csv' | null>(null);
+  const [errorRango, setErrorRango] = useState<string | null>(null);
+
+  function cambiarDesde(valor: string) {
+    setDesde(valor);
+    // Si "Desde" queda después de "Hasta", empuja "Hasta" para mantener el rango válido.
+    if (hasta && valor > hasta) setHasta(valor);
+    setErrorRango(null);
+  }
+
+  function cambiarHasta(valor: string) {
+    if (desde && valor < desde) {
+      setErrorRango('"Hasta" no puede ser anterior a "Desde".');
+      return;
+    }
+    setErrorRango(null);
+    setHasta(valor);
+  }
 
   useEffect(() => {
     get<Site[]>('/sites').then(setSedes).catch(() => setSedes([]));
@@ -72,11 +89,26 @@ export default function Reportes() {
           <div className="ca-filters">
             <div className="ca-field">
               <label>Desde</label>
-              <input type="date" className="ca-input" value={desde} onChange={(e) => setDesde(e.target.value)} />
+              <input
+                type="date"
+                className="ca-input"
+                value={desde}
+                max={hasta || undefined}
+                onChange={(e) => cambiarDesde(e.target.value)}
+              />
             </div>
             <div className="ca-field">
               <label>Hasta</label>
-              <input type="date" className="ca-input" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+              <input
+                type="date"
+                className="ca-input"
+                value={hasta}
+                min={desde || undefined}
+                onChange={(e) => cambiarHasta(e.target.value)}
+              />
+              {errorRango && (
+                <span style={{ fontSize: 11.5, color: 'var(--danger)' }}>{errorRango}</span>
+              )}
             </div>
             <div className="ca-field" style={{ minWidth: 200 }}>
               <label>Sede</label>
