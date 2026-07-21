@@ -5,8 +5,11 @@ import { PrismaService } from '../../common/prisma.service';
 export class SitesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // TODO: implementar lógica de dominio (ver REQUISITOS.md)
+  /** Catálogo de sedes (RF-06), usado por los filtros de aforo/reportes y la carga. */
   async findAll() {
-    return [];
+    return this.prisma.site.findMany({
+      include: { country: true },
+      orderBy: { nombre: 'asc' },
+    });
   }
 }
