@@ -91,7 +91,10 @@ select {
 .ca-shell {
   display: grid;
   grid-template-columns: 248px 1fr;
-  min-height: 100vh;
+  gap: 16px;
+  height: 100vh;
+  padding: 16px;
+  background: var(--bg);
 }
 
 .ca-sidebar {
@@ -101,6 +104,15 @@ select {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  /* Sticky de respaldo: si algún día el shell deja de fijar la altura al viewport,
+     el sidebar igual se queda pegado arriba en vez de desaparecer con el scroll. */
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  height: calc(100vh - 32px);
+  overflow-y: auto;
 }
 
 .ca-brand {
@@ -191,6 +203,12 @@ select {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .ca-topbar {
@@ -216,7 +234,12 @@ select {
 
 .ca-content {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   padding: 28px;
+}
+
+.ca-content > * {
   max-width: 1240px;
   width: 100%;
   margin: 0 auto;
