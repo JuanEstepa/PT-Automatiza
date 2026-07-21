@@ -1,0 +1,153 @@
+// ERD -> ver MODELO-DATOS.md. Núcleo MVP + entidades futuras marcadas.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Country {
+  id            Int            @id @default(autoincrement())
+  isoCode       String         @unique // CO, PA
+  nombre        String
+  documentTypes DocumentType[]
+  employees     Employee[]
+  sites         Site[]
+}
+
+model DocumentType {
+  id               Int                @id @default(autoincrement())
+  country          Country            @relation(fields: [countryId], references: [id])
+  countryId        Int
+  codigo           String // CC, CE, PEP, PAS, CIP, E, N
+  nombre           String
+  patronValidacion String? // regex por país
+  documents        EmployeeDocument[]
+
+  @@unique([countryId, codigo])
+}
+
+model Employee {
+  id             Int                 @id @default(autoincrement())
+  codigoEmpleado String              @unique // clave natural del negocio
+  primerNombre   String
+  segundoNombre  String?
+  primerApellido String
+  segundoApellido String?
+  country        Country             @relation(fields: [countryId], references: [id])
+  countryId      Int
+  area           String?
+  cargo          String?
+  email          String? // no crítico
+  telefono       String? // no crítico
+  fechaIngreso   DateTime?
+  fechaRetiro    DateTime?
+  estado         String              @default("ACTIVO") // ACTIVO / INACTIVO
+  jornada        String? // DIURNA / NOCTURNA / MIXTA
+  biostarUserId  String?
+  tarjetaRfid    String?
+  nivelAcceso    String?
+  documents      EmployeeDocument[]
+  sites          EmployeeSite[]
+  accessEvents   AccessEvent[]
+  ingestionRows  IngestionRowResult[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+}
+
+model EmployeeDocument {
+  id               Int          @id @default(autoincrement())
+  employee         Employee     @relation(fields: [employeeId], references: [id])
+  employeeId       Int
+  documentType     DocumentType @relation(fields: [documentTypeId], references: [id])
+  documentTypeId   Int
+  numeroOriginal   String
+  numeroNormalizado String
+  esPrincipal      Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+
+  // Unicidad compuesta: resuelve C-04 (número solo NO es único entre países)
+  @@unique([documentTypeId, numeroNormalizado])
+}
+
+model Site {
+  id           Int            @id @default(autoincrement())
+  codigoSede   String         @unique
+  nombre       String
+  ciudad       String
+  country      Country        @relation(fields: [countryId], references: [id])
+  countryId    Int
+  direccion    String?
+  aforoMaximo  Int?
+  activa       Boolean        @default(true)
+  employees    EmployeeSite[]
+  devices      Device[]
+  accessEvents AccessEvent[]
+}
+
+model EmployeeSite {
+  id             Int      @id @default(autoincrement())
+  employee       Employee @relation(fields: [employeeId], references: [id])
+  employeeId     Int
+  site           Site     @relation(fields: [siteId], references: [id])
+  siteId         Int
+  esSedePrincipal Boolean @default(false)
+
+  @@unique([employeeId, siteId])
+}
+
+model Device {
+  id              Int           @id @default(autoincrement())
+  site            Site          @relation(fields: [siteId], references: [id])
+  siteId          Int
+  biostarDeviceId String?
+  nombre          String
+  tipo            String? // puerta / lector / molinete
+  accessEvents    AccessEvent[]
+}
+
+model AccessEvent {
+  id         Int       @id @default(autoincrement())
+  employee   Employee? @relation(fields: [employeeId], references: [id]) // nullable -> "persona no identificada"
+  employeeId Int?
+  site       Site      @relation(fields: [siteId], references: [id])
+  siteId     Int
+  device     Device?   @relation(fields: [deviceId], references: [id])
+  deviceId   Int?
+  direccion  String // IN / OUT
+  ocurridoEn DateTime
+  fuente     String   @default("BIOSTAR_SIM") // BIOSTAR_SIM / MANUAL / SENSOR
+
+  @@index([siteId, ocurridoEn])
+}
+
+model IngestionBatch {
+  id              Int                  @id @default(autoincrement())
+  nombreArchivo   String
+  ejecutadoEn     DateTime             @default(now())
+  totalFilas      Int
+  filasOk         Int
+  filasRechazadas Int
+  rows            IngestionRowResult[]
+}
+
+model IngestionRowResult {
+  id         Int            @id @default(autoincrement())
+  batch      IngestionBatch @relation(fields: [batchId], references: [id])
+  batchId    Int
+  numeroFila Int
+  estado     String // OK / RECHAZADO / ADVERTENCIA
+  motivo     String?
+  employee   Employee?      @relation(fields: [employeeId], references: [id])
+  employeeId Int?
+}
+
+// ---- Entidades FUTURAS (modeladas, no usadas en el MVP) ----
+// Ver RF-14, RF-21, RF-22. Se dejan comentadas para no crear tablas vacías;
+// activarlas es descomentar + migrar, no rediseñar.
+//
+// model Area { id Int @id @default(autoincrement()) siteId Int nombre String aforoMaximo Int? }
+// model PersonRole { id Int @id @default(autoincrement()) codigo String nombre String }
+// model AccessPermission { id Int @id @default(autoincrement()) roleId Int siteId Int horarioPermitido String? }
