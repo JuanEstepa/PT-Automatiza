@@ -34,6 +34,13 @@ export default function Empleados() {
 
   const total = empleados?.length ?? 0;
   const activos = useMemo(() => empleados?.filter((e) => e.estado === 'ACTIVO').length ?? 0, [empleados]);
+  const hayFiltros = busqueda !== '' || sedeId !== '' || estado !== '';
+
+  function limpiarFiltros() {
+    setBusqueda('');
+    setSedeId('');
+    setEstado('');
+  }
 
   return (
     <div>
@@ -89,6 +96,9 @@ export default function Empleados() {
                 <option value="INACTIVO">Inactivo</option>
               </select>
             </div>
+            <button className="ca-btn ca-btn-outline" onClick={limpiarFiltros} disabled={!hayFiltros}>
+              ✕ Limpiar filtros
+            </button>
           </div>
         </div>
         <div className="ca-table-wrap">

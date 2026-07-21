@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import Empleados from './pages/Empleados';
 import Aforo from './pages/Aforo';
@@ -18,10 +19,21 @@ function tituloActual(pathname: string) {
 function Shell() {
   const location = useLocation();
   const actual = tituloActual(location.pathname);
+  const [sidebarAbierto, setSidebarAbierto] = useState(false);
+
+  // Cierra el drawer al cambiar de sección (solo importa en móvil; en escritorio no se
+  // nota porque el sidebar ya está fijo y visible).
+  useEffect(() => {
+    setSidebarAbierto(false);
+  }, [location.pathname]);
 
   return (
     <div className="ca-shell">
-      <aside className="ca-sidebar">
+      <div
+        className={`ca-sidebar-backdrop${sidebarAbierto ? ' visible' : ''}`}
+        onClick={() => setSidebarAbierto(false)}
+      />
+      <aside className={`ca-sidebar${sidebarAbierto ? ' ca-sidebar-open' : ''}`}>
         <div className="ca-brand">
           <div className="ca-brand-mark">BA</div>
           <div className="ca-brand-text">
@@ -51,9 +63,18 @@ function Shell() {
 
       <div className="ca-main">
         <header className="ca-topbar">
-          <div>
-            <h1>{actual.label}</h1>
-            <div className="ca-topbar-sub">{actual.sub}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <button
+              className="ca-menu-btn"
+              aria-label="Abrir menú"
+              onClick={() => setSidebarAbierto((v) => !v)}
+            >
+              ☰
+            </button>
+            <div>
+              <h1>{actual.label}</h1>
+              <div className="ca-topbar-sub">{actual.sub}</div>
+            </div>
           </div>
         </header>
         <main className="ca-content">
