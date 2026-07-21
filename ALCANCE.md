@@ -104,4 +104,18 @@ Queda para `ARQUITECTURA.md`, no para el alcance funcional. *Adelanto de la deci
 
 ## 4. Lo que no se alcanzó a hacer
 
-> _(Sección reservada. Se completará al final del desarrollo con lo que, honestamente, no se logró terminar. La honestidad aquí suma.)_
+> Completado al final del desarrollo. El MVP descrito en la sección 1 (a-e) quedó implementado y validado de punta a punta: ingesta del Excel real, aforo por sede sobre eventos simulados, reportes exportables y las 4 pantallas del frontend, todo corriendo con `docker compose up`. Lo que sigue es lo que, con más tiempo, habría hecho distinto o hecho falta.
+
+**Cobertura de tests limitada a la ingesta.** Se pidió explícitamente cubrir "la parte con más reglas" (ingestión y normalización) y esa parte tiene 30 tests unitarios que corren en CI. Los módulos `occupancy`, `reports` y `biostar` **no tienen tests automatizados**: se validaron manualmente contra una base Postgres real durante el desarrollo (ver historial de commits), pero no hay una suite de integración que los proteja de regresiones. El job de backend en `ci.yml` levanta un servicio de Postgres que, con el estado actual de los tests (puramente unitarios, sin tocar la base), queda sin usar — es config para una integración que no llegué a escribir.
+
+**Sin tests de frontend.** Las 4 pantallas se probaron a mano en el navegador contra el backend real (incluida la carga del Excel, la exportación y el aforo en vivo), pero no hay suite automatizada (Vitest/Testing Library) que las cubra.
+
+**Exportación a Excel/CSV solo en la pantalla de Reportes.** RF-17 ("todo lo que se muestre debe poder exportarse") lo interpreté acotado a la auditoría de accesos, que es el caso de uso que motivó el requisito ("acá toda la operación se maneja en Excel", ver `01-transcripcion-reunion.md`). Los listados de Empleados y el tablero de Aforo no tienen botón de exportar propio. Si el alcance real de RF-17 era "cualquier pantalla", es un pendiente barato de agregar (mismo patrón de `reports.service.ts`).
+
+**Sin paginación.** Los listados de empleados (~150 filas) y el reporte de auditoría (~1000 eventos con 7 días de simulación) se traen completos en una sola respuesta. Funciona bien al tamaño de datos actual; con un volumen real de banco (miles de empleados, meses de histórico de accesos) necesitaría paginación o carga incremental antes de ir a producción.
+
+**Sin autenticación.** Tal como quedó asumido en `REQUISITOS.md` (P-12, sin respuesta del cliente): el MVP no tiene login ni control de acceso a la aplicación misma — cualquiera con la URL puede ver y exportar todo. Aceptable para la sustentación, no para producción.
+
+**Aforo con reinicio a medianoche sin ajuste por zona horaria por sede.** El corte "medianoche" (`occupancy.service.ts`) usa la hora del servidor, no la zona horaria de cada sede (Colombia y Panamá comparten UTC-5 hoy, así que en la práctica no distorsiona nada, pero el código no lo hace explícito ni lo generalizaría bien si el banco abriera una sede en otro huso horario).
+
+**Todo lo demás declarado fuera de alcance en la sección 3** (contratistas/visitantes, aforo por área, sincronización real con BioStar, deduplicación avanzada, campos de nómina) sigue fuera, tal como se decidió ahí — el modelo de datos los deja preparados (ver `schema.prisma`, entidades comentadas) sin construirlos.
